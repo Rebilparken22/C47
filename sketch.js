@@ -1,5 +1,6 @@
 var ball, ball2, ball3;
-var score;
+var score = 0,score2 = 0,score3 = 0;
+var roundEnded = false;
 var wall;
 var database;
 var position;
@@ -12,6 +13,11 @@ var bulletblue,bulletblueIMG;
 var explosion,explosionIMG;
 var bgg,bbg,brg;
 var explosionValue = 0;
+var redScoreIMG,greenScoreIMG,blueScoreIMG;
+var ballExists = true;
+var ball2Exists = true;
+var ball3Exists = true;
+
 
 function preload() {
     ballIMG = loadImage("tankgreen.png");
@@ -22,6 +28,9 @@ function preload() {
     bulletblueIMG = loadImage("bulletblue.png");
     explosionIMG = loadImage("explosion.png");
     explosionIMG.scale = 2;
+    redScoreIMG = loadImage("redscore.png");
+    greenScoreIMG = loadImage("greenscore.png");
+    blueScoreIMG = loadImage("bluescore.png");
 }
 
 function setup() {
@@ -30,6 +39,9 @@ function setup() {
 
     var ballsloc = database.ref("ball/position");
     ballsloc.on("value", readposition);
+
+    var ballscore = database.ref("ball/score");
+    ballscore.on("value", readscore);
 
     var ballsloc2 = database.ref("ball2/position2");
     ballsloc2.on("value", readposition2);
@@ -52,6 +64,11 @@ function setup() {
     ball3.shapeColor = "blue";
     ball3.addImage(ball3IMG);
     ball3.scale = 0.05;
+
+    // ball = green, ball2 = red, ball3 = blue
+    // when anything is destroyed by bgg--> score = +1 for ball
+    // when anything is destroyed by brg--> score = +1 for ball2
+    // when anything is destroyed by bbg--> score = +1 for ball3
 
     wall = createSprite(50, 50, 100, 5);
     wall2 = createSprite(100, 100, 5, 100);
@@ -111,44 +128,52 @@ function setup() {
     
     edges = createEdgeSprites()
 
+    
 }
 
 function draw() {
     background("white");
+    
 
     if(bgg.isTouching(ball2 )){
         ball2.addImage(explosionIMG);
         bgg.destroyEach();
         explosionValue += 1;
         ball2.lifetime = 50;
+       ball2Exists = false;
     }
     if(bgg.isTouching(ball3)){
         ball3.addImage(explosionIMG);
         bgg.destroyEach();
         ball3.lifetime = 50;
+        ball3Exists = false;
     }
 
     if(bbg.isTouching(ball2 )){
         ball2.addImage(explosionIMG);
         bbg.destroyEach();
         ball2.lifetime = 50;
+        ball2Exists = false;
     }
    
     if(bbg.isTouching(ball)){
         ball.addImage(explosionIMG);
         bbg.destroyEach();
         ball.lifetime = 50;
+        ballExists = false;
     }
 
     if(brg.isTouching(ball3)){
         ball3.addImage(explosionIMG);
         brg.destroyEach();
         ball3.lifetime = 50;
+        ball3Exists = false;
     }
     if(brg.isTouching(ball)){
         ball.addImage(explosionIMG);
         brg.destroyEach();
         ball.lifetime = 50;
+        ballExists = false;
     }
 
 
@@ -166,9 +191,8 @@ function draw() {
         ball.rotation = 180;
     }
 
-    if(keyDown("space")){
+    if(keyDown("space") && ballExists === true){
         bulletgreen = createSprite(ball.x,ball.y,10,10);
-        bulletgreen.velocityY = 5; 
         bulletgreen.addImage(bulletgreenIMG);   
         bulletgreen.scale = 0.1;
         if(ball.rotation === -90){
@@ -202,9 +226,8 @@ function draw() {
         ball2.rotation = 180;
     }
 
-    if(keyDown("Q")){
+    if(keyDown("Q") && ball2Exists === true){
         bulletred = createSprite(ball2.x,ball2.y,10,10);
-        bulletred.velocityY = 5;
         bulletred.addImage(bulletredIMG);
         bulletred.scale = 0.1;
         
@@ -238,7 +261,7 @@ function draw() {
         ball3.rotation = 180;
     }
 
-    if(keyDown("Z")){
+    if(keyDown("Z") && ball3Exists === true){
         bulletblue = createSprite(ball3.x,ball3.y,10,10);
         
         bulletblue.addImage(bulletblueIMG);
@@ -592,6 +615,14 @@ function draw() {
 
     drawSprites();
 
+    if(ball2Exists === false && ball3Exists === false){
+        roundEnded = true 
+    }
+    if(roundEnded === true){
+        score = score +1
+    }
+    text("green " + score,20,20);
+
     ball.collide(edges[0]);
     ball.collide(edges[1]);
     ball.collide(edges[2]);
@@ -627,6 +658,7 @@ function draw() {
     bbg.bounceOff(edges[3]);
 
 }
+
 
 function readposition(data) {
     position = data.val();
@@ -684,4 +716,16 @@ function writePosition3(x, y) {
         'x': x,
         'y': y
     })
+}
+
+function readscore(data) {
+    score = data.val();
+    
+    
+}
+
+function readscore2(data) {
+    score = data.val();
+    ball.x = position.x;
+
 }
